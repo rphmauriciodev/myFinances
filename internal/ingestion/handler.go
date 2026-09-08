@@ -7,9 +7,20 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/rphmauriciodev/myFinance/internal/dtos"
+	"github.com/rphmauriciodev/myFinance/internal/queue"
 )
 
-func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+type Handler struct {
+	queue *queue.Queue
+}
+
+func NewHandler(queue *queue.Queue) *Handler {
+	return &Handler{
+		queue: queue,
+	}
+}
+
+func (h *Handler) Handle(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	var body dtos.Transaction
 
 	if err := json.Unmarshal([]byte(req.Body), &body); err != nil {
@@ -26,7 +37,7 @@ func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.AP
 		}, nil
 	}
 
-	if err := publishTransaction(body); err != nil {
+	if err := h.queue.Send(ctx, req.Body); err != nil {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       `{"error":"failed to publish transaction"}`,
@@ -37,12 +48,4 @@ func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.AP
 		StatusCode: 200,
 		Body:       `{"message":"OK"}`,
 	}, nil
-}
-
-func publishTransaction(transaction dtos.Transaction) error {
-	// Implement the logic to publish the transaction here
-	// For example, you might want to send it to a message queue,
-	// notify other services, or perform other actions.
-
-	return nil
 }
