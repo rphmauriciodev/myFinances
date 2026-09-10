@@ -40,7 +40,7 @@ func (h *Handler) Handle(ctx context.Context, req events.APIGatewayV2HTTPRequest
 	if err := h.queue.Send(ctx, req.Body); err != nil {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
-			Body:       `{"error":"failed to publish transaction"}`,
+			Body:       fmt.Sprintf(`{"error":"failed to publish transaction: %s"}`, err.Error()),
 		}, nil
 	}
 
